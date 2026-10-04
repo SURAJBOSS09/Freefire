@@ -1,0 +1,37 @@
+name: Build FreeFire Cheat
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26b
+          add-to-path: true
+
+      - name: Configure build
+        run: |
+          echo "ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+
+      - name: Build with ndk-build
+        run: |
+          cd jni
+          ${{ steps.setup-ndk.outputs.ndk-path }}/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=./Android.mk NDK_APPLICATION_MK=./Application.mk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsrc-armeabi-v7a
+          path: jni/libs/armeabi-v7a/*.so
